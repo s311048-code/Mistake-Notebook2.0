@@ -1,200 +1,50 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<title>錯題整理器 Ultimate</title>
-
-<style>
-body {
-    font-family: "Segoe UI";
-    background: linear-gradient(135deg, #74ebd5, #ACB6E5);
-    text-align: center;
-}
-
-.container {
-    background: white;
-    width: 90%;
-    max-width: 600px;
-    margin: auto;
-    padding: 20px;
-    border-radius: 15px;
-}
-
-button {
-    margin: 5px;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 8px;
-    background: #6c63ff;
-    color: white;
-}
-
-.item {
-    background: #f4f4f4;
-    margin: 10px;
-    padding: 10px;
-    border-radius: 10px;
-    text-align: left;
-}
-
-img {
-    width: 100%;
-    border-radius: 10px;
-}
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>錯題整理器 Ultimate</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h1>錯題整理器 Ultimate</h1>
+    <h1>錯題整理器 Ultimate</h1>
 
-<div class="container">
+    <div class="container">
+        <input type="text" id="question" placeholder="輸入錯題內容...">
+        
+        <select id="category">
+            <option>數學</option>
+            <option>英文</option>
+            <option>自然</option>
+            <option>社會</option>
+        </select>
 
-<input type="text" id="question" placeholder="輸入錯題"><br>
-
-<select id="category">
-    <option>數學</option>
-    <option>英文</option>
-    <option>自然</option>
-    <option>社會</option>
-</select>
-
-<input type="file" id="imageInput"><br>
-
-<button onclick="addItem()">新增</button>
-
-<hr>
-
-<input type="text" id="search" placeholder="搜尋..." oninput="show()">
-
-<div id="tabs"></div>
-<div id="list"></div>
-
-<hr>
-
-<button onclick="exportData()">匯出資料</button>
-<input type="file" onchange="importData(event)">
-
-</div>
-
-<script>
-let data = [];
-let currentCategory = "全部";
-
-window.onload = function() {
-    let saved = localStorage.getItem("mistakes");
-    if(saved) data = JSON.parse(saved);
-    renderTabs();
-    show();
-};
-
-function save() {
-    localStorage.setItem("mistakes", JSON.stringify(data));
-}
-
-function addItem() {
-    let q = document.getElementById("question").value;
-    let c = document.getElementById("category").value;
-    let file = document.getElementById("imageInput").files[0];
-
-    if(!q && !file) return;
-
-    let reader = new FileReader();
-    reader.onload = function(e) {
-        data.push({
-            text: q,
-            category: c,
-            image: e.target.result
-        });
-        save();
-        renderTabs();
-        show();
-    };
-
-    if(file) reader.readAsDataURL(file);
-    else {
-        data.push({text: q, category: c, image: null});
-        save();
-        renderTabs();
-        show();
-    }
-
-    document.getElementById("question").value = "";
-    document.getElementById("imageInput").value = "";
-}
-
-function renderTabs() {
-    let tabs = document.getElementById("tabs");
-    let categories = ["全部", ...new Set(data.map(i => i.category))];
-
-    tabs.innerHTML = "";
-
-    categories.forEach(c => {
-        tabs.innerHTML += `
-        <button onclick="switchTab('${c}')">${c}</button>
-        `;
-    });
-}
-
-function switchTab(c) {
-    currentCategory = c;
-    show();
-}
-
-function show() {
-    let list = document.getElementById("list");
-    let keyword = document.getElementById("search").value.toLowerCase();
-
-    list.innerHTML = "";
-
-    data
-    .filter(item => 
-        (currentCategory === "全部" || item.category === currentCategory) &&
-        (item.text?.toLowerCase().includes(keyword))
-    )
-    .forEach((item, i) => {
-        list.innerHTML += `
-        <div class="item">
-            <b>${item.category}</b>
-            ${item.text ? `<p>${item.text}</p>` : ""}
-            ${item.image ? `<img src="${item.image}">` : ""}
-            <button onclick="del(${i})">刪除</button>
+        <div class="upload-section">
+            <label for="imageInput" class="camera-btn">📷 拍照或上傳題目</label>
+            <input type="file" id="imageInput" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)">
+            <div id="imagePreview"></div>
         </div>
-        `;
-    });
-}
 
-function del(i) {
-    data.splice(i,1);
-    save();
-    show();
-}
+        <button class="primary-btn" onclick="addItem()">新增錯題</button>
 
-// 匯出
-function exportData() {
-    let blob = new Blob([JSON.stringify(data)], {type:"application/json"});
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "mistakes.json";
-    a.click();
-}
+        <hr>
 
-// 匯入
-function importData(e) {
-    let file = e.target.files[0];
-    let reader = new FileReader();
+        <input type="text" id="search" placeholder="搜尋關鍵字..." oninput="show()">
+        <div id="tabs" class="tab-container"></div>
+        
+        <div id="list"></div>
 
-    reader.onload = function() {
-        data = JSON.parse(reader.result);
-        save();
-        renderTabs();
-        show();
-    };
+        <hr>
 
-    reader.readAsText(file);
-}
-</script>
+        <div class="data-management">
+            <button onclick="exportData()">匯出備份 (JSON)</button>
+            <label class="import-btn">
+                匯入備份 <input type="file" onchange="importData(event)" style="display:none">
+            </label>
+        </div>
+    </div>
 
+    <script src="script.js"></script>
 </body>
 </html>
